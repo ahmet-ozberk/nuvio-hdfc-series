@@ -1,9 +1,9 @@
 # AO HDFilmCehennemi Diziler (Preview)
 
-An independent Nuvio plugin on its own Git branch. It does not change Anthology.
+An independent Nuvio plugin in its own GitHub repository. It does not modify Anthology.
 
 Install (Plugins, not Addons):
-https://raw.githubusercontent.com/ahmet-ozberk/ahmet-ozberk/nuvio-hdfc-series/manifest.json
+https://raw.githubusercontent.com/ahmet-ozberk/nuvio-hdfc-series/main/manifest.json
 
 Provider ID: ao_hdfc_series
 Catalog ID: ao_hdfc_series_catalog
