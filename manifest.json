@@ -1,0 +1,48 @@
+{
+  "name": "AO HDFilmCehennemi Diziler",
+  "version": "0.2.0",
+  "author": "AO",
+  "description": "Anthology'den bağımsız TV dizileri sağlayıcısı. CloseLoad 1080p HLS ve altyazı desteği.",
+  "scrapers": [
+    {
+      "id": "ao_hdfc_series",
+      "name": "HDFilmCehennemi Diziler [AO]",
+      "version": "0.2.0",
+      "author": "AO",
+      "description": "Dizi bölüm URL keşfi; CloseLoad 1080p HLS, çift ses ve altyazı desteği.",
+      "supportedTypes": [
+        "tv",
+        "series"
+      ],
+      "filename": "providers/ao_hdfc_series.js",
+      "enabled": true,
+      "formats": [
+        "hls",
+        "m3u8",
+        "mp4"
+      ],
+      "contentLanguage": [
+        "tr"
+      ],
+      "catalogs": [
+        {
+          "type": "tv",
+          "id": "ao_hdfc_series_catalog",
+          "name": "HDFilmCehennemi — Diziler",
+          "extra": [
+            {
+              "name": "search",
+              "isRequired": false
+            }
+          ]
+        }
+      ],
+      "resources": [
+        "catalog",
+        "meta",
+        "stream"
+      ],
+      "supportsExternalPlayer": true
+    }
+  ]
+}
