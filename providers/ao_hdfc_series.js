@@ -73,12 +73,16 @@ async function aoFindEpisode(slug,season,episode){
   if(!/^[a-z0-9-]{2,120}$/.test(slug))return '';
   var home=AO_ORIGIN+'/dizi/'+slug+'/';
   var pages=[home+'sezon-'+season+'/',home];
-  if(slug===AO_FLASH&&season===4&&episode===1){
-    pages.unshift(home+'sezon-4/bolum-1-hd12/');
-  }
+  // Exact, user-supplied episode routes. Suffixes such as -hd9 must not be guessed.
+  var known={
+    'the-flash-izle-12:4:1':home+'sezon-4/bolum-1-hd12/',
+    'the-flash-izle-12:4:16':home+'sezon-4/bolum-16-hd9/'
+  };
+  var knownUrl=known[slug+':'+season+':'+episode]||'';
+  if(knownUrl)pages.unshift(knownUrl);
   for(var i=0;i<pages.length;i++){
     var html=await aoRead(pages[i]);if(!html)continue;
-    if(slug===AO_FLASH&&season===4&&episode===1&&pages[i].indexOf('bolum-1-hd12/')!==-1)return pages[i];
+    if(knownUrl&&pages[i]===knownUrl)return pages[i];
     var links=aoLinks(html,pages[i]);
     for(var k=0;k<links.length;k++){
       var item=aoEpisode(links[k],slug);
@@ -219,8 +223,19 @@ function aoArgs(id,mediaType,season,episode){
     season=obj.season||obj.seasonNum||season;
     episode=obj.episode||obj.episodeNum||episode;
   }
-  var m=String(id||'').match(/^(60735|tt3107288):(\d+):(\d+)$/);
-  if(m){id=m[1];season=season||m[2];episode=episode||m[3]}
+  var raw=String(id||'').trim();
+  // The video IDs emitted by getMeta are different from show IDs.
+  // Nuvio can call getStreams(video.id) without separate season/episode args.
+  var epId=raw.match(/^ao_hdfc_series:ep:([a-z0-9-]+):(\d+):(\d+)$/);
+  if(epId){
+    id=AO_ID+':show:'+epId[1];
+    if(!season)season=epId[2];
+    if(!episode)episode=epId[3];
+    if(!mediaType)mediaType='tv';
+  }else{
+    var m=raw.match(/^(60735|tt3107288):(\d+):(\d+)$/);
+    if(m){id=m[1];if(!season)season=m[2];if(!episode)episode=m[3];}
+  }
   return {slug:aoSlug(id),type:mediaType,season:Number(season),episode:Number(episode)};
 }
 async function getStreams(id,mediaType,season,episode){
