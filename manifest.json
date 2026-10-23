@@ -1,8 +1,8 @@
 {
-  "name": "AO HDFilmCehennemi Diziler",
-  "version": "0.2.5",
+  "name": "AO Türkçe Dizi Kaynakları",
+  "version": "0.3.0",
   "author": "AO",
-  "description": "Nuvio için HDFilmCehennemi dizi akış kaynağı (v0.2.5 tanılama).",
+  "description": "Nuvio için bağımsız dizi oynatma kaynakları: HDFilmCehennemi ve RoketDizi.",
   "scrapers": [
     {
       "id": "ao_hdfc_series",
@@ -41,6 +41,28 @@
         "catalog",
         "meta",
         "stream"
+      ],
+      "supportsExternalPlayer": true
+    },
+    {
+      "id": "ao_roketdizi_series",
+      "name": "RoketDizi [AO]",
+      "version": "0.1.0",
+      "author": "AO",
+      "description": "The Flash bölüm URL eşleştirmesi ve iframe/doğrudan HLS-MP4 kaynağı arama (önizleme).",
+      "supportedTypes": [
+        "tv",
+        "series"
+      ],
+      "filename": "providers/ao_roketdizi_series.js",
+      "enabled": true,
+      "formats": [
+        "hls",
+        "m3u8",
+        "mp4"
+      ],
+      "contentLanguage": [
+        "tr"
       ],
       "supportsExternalPlayer": true
     }
