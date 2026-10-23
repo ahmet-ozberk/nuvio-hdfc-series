@@ -1,15 +1,15 @@
 {
   "name": "AO HDFilmCehennemi Diziler",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "author": "AO",
-  "description": "Nuvio TV kaynak sağlayıcısı: The Flash bölüm adreslerinde değişken -hd son ekleri desteklenir.",
+  "description": "Nuvio için HDFilmCehennemi dizi akış kaynağı (v0.2.5 tanılama).",
   "scrapers": [
     {
       "id": "ao_hdfc_series",
       "name": "HDFilmCehennemi Diziler [AO]",
-      "version": "0.2.4",
+      "version": "0.2.5",
       "author": "AO",
-      "description": "Önce -hd eki olmadan bölüm arar; gerektiğinde sayfa bağlantılarından gerçek adresi bulur.",
+      "description": "Tanılama sürümü: HTTP engellerini ve bölüm ayrıştırma hatalarını cihaz günlüklerinde gösterir.",
       "supportedTypes": [
         "tv",
         "series"
