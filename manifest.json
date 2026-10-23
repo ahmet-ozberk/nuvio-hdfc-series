@@ -1,15 +1,15 @@
 {
   "name": "AO HDFilmCehennemi Diziler",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": "AO",
-  "description": "Anthology'den bağımsız TV dizileri sağlayıcısı. CloseLoad 1080p HLS ve altyazı desteği.",
+  "description": "Anthology'den bağımsız dizi sağlayıcısı; geçersiz HTTP 404 HLS kaynaklarını filtreler.",
   "scrapers": [
     {
       "id": "ao_hdfc_series",
       "name": "HDFilmCehennemi Diziler [AO]",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "author": "AO",
-      "description": "Dizi bölüm URL keşfi; CloseLoad 1080p HLS, çift ses ve altyazı desteği.",
+      "description": "Dinamik bölüm keşfi; taze oynatma URL'si ve HLS erişilebilirlik kontrolü.",
       "supportedTypes": [
         "tv",
         "series"
