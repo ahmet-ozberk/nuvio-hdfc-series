@@ -184,6 +184,8 @@ async function aoExtract(epUrl){
     var other=aoDirect(frameHtml,frames[i]);
     if(other.length){candidates=other;parent=frames[i];break}
   }
+  // Try directly exposed sources if all known iframe players lacked media.
+  if(!candidates.length){candidates=aoDirect(html,epUrl);parent=epUrl;}
   var label=/\bDUAL\b|T[üu]rk[çc]e\s*Dublaj/i.test(html)
     ?'Dual/TR (site etiketi)':'Ses dili doğrulanmadı';
   var referer=((parent.match(/^https?:\/\/[^/]+/)||[])[0]||AO_ORIGIN)+'/';
