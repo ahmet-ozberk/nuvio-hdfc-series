@@ -282,7 +282,9 @@ async function getMeta(arg){
 async function getCatalog(arg){
   if(arg&&arg.type==='movie')return {metas:[]};
   var search=aoFold(arg&&(arg.search||(arg.extra&&arg.extra.search))||'');
-  var pages=[AO_ORIGIN+'/dizi/'],seen={},metas=[];
+  // The site's actual public series listing is /yabancidiziizle-5/.
+  // /dizi/ is primarily a URL prefix for individual shows, not a dependable catalog.
+  var pages=[AO_ORIGIN+'/yabancidiziizle-5/',AO_ORIGIN+'/'],seen={},metas=[];
   if(search)pages.unshift(AO_ORIGIN+'/?s='+encodeURIComponent(search));
   for(var i=0;i<pages.length;i++){
     var html=await aoRead(pages[i]),urls=aoLinks(html,pages[i]);
