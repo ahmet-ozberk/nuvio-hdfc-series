@@ -39,3 +39,9 @@ IMPORTANT: The target website could not be reached reliably from the test enviro
 - Nuvio **Plugins/Local Scrapers** are primarily stream providers. A plugin manifest does not guarantee a separate searchable TV catalog or Home rows; open The Flash using an existing TMDB/addon catalog and check its source list.
 - Only The Flash (TMDB 60735 or IMDb tt3107288) currently has reliable automatic ID mapping. Other show metadata IDs are not yet mapped.
 - **Not yet validated**: the actual HDFilmCehennemi video player, working 4x16 stream, and Turkish dub audio track. The site denies testing environment HTML requests with HTTP 403.
+
+## v0.2.5 — Diagnostics
+
+- Reports `REQUEST`, `UNSUPPORTED_REQUEST`, `HTTP_STATUS`, `FETCH_EXCEPTION`, `EMPTY_EPISODE_HTML`, `HTML_PARSE` in Android logs under the plugin tag. Does not print tokenized media URLs.
+- This update is for identifying why the provider returns zero streams, **not** a claim that live The Flash playback is fixed.
+- NuvioTV Plugin's built-in generic test uses TMDB 603 and series S01E01; our scraper is The Flash-specific, so that generic test normally returns zero. Inspect logs while querying The Flash S04E16 instead.
