@@ -22,3 +22,11 @@ IMPORTANT: The target website could not be reached reliably from the test enviro
 - Propagate user-agent and referer request headers.
 - Check directly exposed media on the episode page when iframes provide no media.
 - Basic tests passed with mocked responses, not live site playback.
+
+## v0.2.3
+
+- Parse Nuvio catalog episode IDs (`ao_hdfc_series:ep:<slug>:<season>:<episode>`) before fetching streams.
+- Add the exact user-supplied The Flash S04E16 URL (`/sezon-4/bolum-16-hd9/`).
+- Use the public `/yabancidiziizle-5/` series listing and homepage for catalog discovery.
+- Log whether a missing result is due to episode URL discovery or stream extraction.
+- Mock tests passed. Live site access/playback and Turkish audio still **not verified**.
