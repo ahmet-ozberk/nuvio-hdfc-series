@@ -244,7 +244,15 @@ async function getStreams(id,mediaType,season,episode){
     !Number.isInteger(a.season)||!Number.isInteger(a.episode)||
     a.season<1||a.season>50||a.episode<1||a.episode>100)return [];
   var link=await aoFindEpisode(a.slug,a.season,a.episode);
-  return link?aoExtract(link):[];
+  if(!link){
+    if(typeof console!=='undefined'&&console.warn)console.warn('[AO HDFC] No episode URL',a.slug,a.season,a.episode);
+    return [];
+  }
+  var streams=await aoExtract(link);
+  if(!streams.length&&typeof console!=='undefined'&&console.warn){
+    console.warn('[AO HDFC] Episode page found, no playable source',a.slug,a.season,a.episode);
+  }
+  return streams;
 }
 function aoMetaBase(slug){
   return {id:AO_ID+':show:'+slug,type:'series',
