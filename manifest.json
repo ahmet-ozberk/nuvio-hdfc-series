@@ -1,15 +1,15 @@
 {
   "name": "AO HDFilmCehennemi Diziler",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "author": "AO",
-  "description": "Anthology'den bağımsız dizi sağlayıcısı; bölüm ID ve URL eşleştirmesi düzeltildi.",
+  "description": "Nuvio TV kaynak sağlayıcısı: The Flash bölüm adreslerinde değişken -hd son ekleri desteklenir.",
   "scrapers": [
     {
       "id": "ao_hdfc_series",
       "name": "HDFilmCehennemi Diziler [AO]",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "author": "AO",
-      "description": "The Flash S04E16 ve Nuvio bölüm kimliği desteği; dizi kataloğu ve kaynak kontrolü.",
+      "description": "Önce -hd eki olmadan bölüm arar; gerektiğinde sayfa bağlantılarından gerçek adresi bulur.",
       "supportedTypes": [
         "tv",
         "series"
