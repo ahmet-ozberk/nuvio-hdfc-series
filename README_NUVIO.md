@@ -1,4 +1,4 @@
-# AO HDFilmCehennemi Diziler (Preview)
+# AO Nuvio Dizi Kaynakları (Preview)
 
 An independent Nuvio plugin in its own GitHub repository. It does not modify Anthology.
 
@@ -45,3 +45,14 @@ IMPORTANT: The target website could not be reached reliably from the test enviro
 - Reports `REQUEST`, `UNSUPPORTED_REQUEST`, `HTTP_STATUS`, `FETCH_EXCEPTION`, `EMPTY_EPISODE_HTML`, `HTML_PARSE` in Android logs under the plugin tag. Does not print tokenized media URLs.
 - This update is for identifying why the provider returns zero streams, **not** a claim that live The Flash playback is fixed.
 - NuvioTV Plugin's built-in generic test uses TMDB 603 and series S01E01; our scraper is The Flash-specific, so that generic test normally returns zero. Inspect logs while querying The Flash S04E16 instead.
+
+## v0.3.0 — RoketDizi sağlayıcısı
+
+- Yeni bağımsız plugin: `RoketDizi [AO]` (`ao_roketdizi_series`, sürüm `0.1.0`).
+- The Flash (TMDB `60735` / IMDb `tt3107288`) için sezon/bölüm URL yolu:
+  `https://roketdizi.life/dizi/the-flash/sezon-4/bolum-16`
+- Yalnızca doğrudan HTML'de bulunan veya iframe içindeki herkese açık `m3u8` / `mp4` kaynaklarını Nuvio'ya döndürmeyi dener.
+- Video dosyası barındırmaz, uzak JavaScript çalıştırmaz, DRM ya da erişim engeli aşmaz.
+- Nuvio plugin'leri ayrı katalog oluşturmaktan ziyade mevcut TMDB dizi ekranında oynatma kaynağı sunar.
+- HDFilmCehennemi sağlayıcısı ve ID'si değiştirilmedi. RoketDizi sağlayıcısı bağımsız açılıp kapatılabilir.
+- **Sınır:** roketdizi.life sunucusu dış test ortamına HTTP 403 verdiği için gerçek sayfadaki iframe biçimi, çalışan stream ve Türkçe ses doğrulanamadı. Mock testlerde direkt MP4 / iframe HLS ayrıştırması geçti.
