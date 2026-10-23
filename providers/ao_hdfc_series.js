@@ -44,11 +44,21 @@ async function aoRead(url,referer,fresh){
     var opts={headers:headers};
     if(typeof AbortSignal!=='undefined'&&AbortSignal.timeout)opts.signal=AbortSignal.timeout(8500);
     var r=await fetch(url,opts);
-    if(!r||!r.ok)return '';
+    if(!r||!r.ok){
+      if(typeof console!=='undefined'&&console.warn){
+        console.warn('[AO HDFC] HTTP_STATUS',r&&r.status||0,url.indexOf('/video/')!==-1?'player':'page');
+      }
+      return '';
+    }
     var html=await r.text();
     if(!fresh&&html&&html.length<3000000)AO_CACHE[key]=html;
     return html;
-  }catch(e){return ''}
+  }catch(e){
+    if(typeof console!=='undefined'&&console.warn){
+      console.warn('[AO HDFC] FETCH_EXCEPTION',String(e&&e.message||e).slice(0,120));
+    }
+    return '';
+  }
 }
 function aoLinks(html,base){
   var out=[],seen={},re=/(?:href|data-href|data-url)\s*=\s*["']([^"']+)["']/gi,m;
@@ -185,7 +195,11 @@ async function aoProbePlayable(url,headers,hls){
   }
 }
 async function aoExtract(epUrl){
-  var html=await aoRead(epUrl,undefined,true);if(!html)return [];
+  var html=await aoRead(epUrl,undefined,true);
+  if(!html){
+    if(typeof console!=='undefined'&&console.warn)console.warn('[AO HDFC] EMPTY_EPISODE_HTML');
+    return [];
+  }
   var candidates=[],subtitles=[],parent=epUrl,frames=aoFrames(html,epUrl);
   for(var i=0;i<frames.length;i++){
     var frameHtml=await aoRead(frames[i],AO_ORIGIN+'/',true);
@@ -197,6 +211,9 @@ async function aoExtract(epUrl){
   }
   // Try directly exposed sources if all known iframe players lacked media.
   if(!candidates.length){candidates=aoDirect(html,epUrl);parent=epUrl;}
+  if(typeof console!=='undefined'&&console.log){
+    console.log('[AO HDFC] HTML_PARSE frames='+frames.length+' candidates='+candidates.length);
+  }
   var label=/\bDUAL\b|T[üu]rk[çc]e\s*Dublaj/i.test(html)
     ?'Dual/TR (site etiketi)':'Ses dili doğrulanmadı';
   var referer=((parent.match(/^https?:\/\/[^/]+/)||[])[0]||AO_ORIGIN)+'/';
@@ -247,9 +264,17 @@ function aoArgs(id,mediaType,season,episode){
 }
 async function getStreams(id,mediaType,season,episode){
   var a=aoArgs(id,mediaType,season,episode);
+  if(typeof console!=='undefined'&&console.log){
+    console.log('[AO HDFC] REQUEST', 'id='+String(a.slug||'unsupported'),
+      'type='+String(a.type||'unset'),
+      'season='+String(a.season),'episode='+String(a.episode));
+  }
   if(a.type==='movie'||!a.slug||
     !Number.isInteger(a.season)||!Number.isInteger(a.episode)||
-    a.season<1||a.season>50||a.episode<1||a.episode>100)return [];
+    a.season<1||a.season>50||a.episode<1||a.episode>100){
+    if(typeof console!=='undefined'&&console.warn)console.warn('[AO HDFC] UNSUPPORTED_REQUEST');
+    return [];
+  }
   // Try canonical suffix-free path before probing index pages.
   var direct=aoEpisodeBase(a.slug,a.season,a.episode);
   var streams=await aoExtract(direct);
