@@ -32,10 +32,11 @@ function aoSite(href,base){
   var u=aoAbsolute(href,base).split(/[?#]/)[0];
   return /^https:\/\/(?:www\.)?hdfilmcehennemi\.nl\/dizi\/[a-z0-9-]+(?:\/[a-z0-9-]+)*\/?$/i.test(u)?u:'';
 }
-async function aoRead(url,referer){
+async function aoRead(url,referer,fresh){
   if(!url)return '';
   var key=url+'|'+String(referer||'');
-  if(AO_CACHE[key])return AO_CACHE[key];
+  // Signed playback URLs are short-lived: never reuse cached player HTML.
+  if(!fresh&&AO_CACHE[key])return AO_CACHE[key];
   try{
     var headers={},names=Object.keys(AO_HEADERS);
     for(var i=0;i<names.length;i++)headers[names[i]]=AO_HEADERS[names[i]];
@@ -45,7 +46,7 @@ async function aoRead(url,referer){
     var r=await fetch(url,opts);
     if(!r||!r.ok)return '';
     var html=await r.text();
-    if(html&&html.length<3000000)AO_CACHE[key]=html;
+    if(!fresh&&html&&html.length<3000000)AO_CACHE[key]=html;
     return html;
   }catch(e){return ''}
 }
@@ -146,11 +147,37 @@ function aoFrames(html,parent){
   }
   return out.slice(0,3);
 }
+async function aoProbePlayable(url,headers,hls){
+  var opts={headers:{},signal:undefined};
+  for(var k in headers)if(Object.prototype.hasOwnProperty.call(headers,k))opts.headers[k]=headers[k];
+  if(typeof AbortSignal!=='undefined'&&AbortSignal.timeout)opts.signal=AbortSignal.timeout(5000);
+  try{
+    if(hls){
+      // Read just the start of the playlist, not a video file.
+      opts.headers.Range='bytes=0-16383';
+      var r=await fetch(url,opts);
+      if(!r.ok)return false;
+      var data=await r.text();
+      // CDN error pages often respond with 200 HTML; reject those as non-media.
+      return /^\s*#EXTM3U\b/i.test(data)&&/#EXT-X-|#EXTINF/i.test(data);
+    }
+    opts.method='HEAD';
+    var head=await fetch(url,opts);
+    if(head.ok)return true;
+    if(head.status!==405&&head.status!==501)return false;
+    // Some hosts do not support HEAD; use a tiny ranged GET instead.
+    opts.method='GET';
+    opts.headers.Range='bytes=0-127';
+    var get=await fetch(url,opts);
+    if(get.body&&typeof get.body.cancel==='function')try{await get.body.cancel()}catch(e){}
+    return get.ok;
+  }catch(e){return false}
+}
 async function aoExtract(epUrl){
-  var html=await aoRead(epUrl);if(!html)return [];
+  var html=await aoRead(epUrl,undefined,true);if(!html)return [];
   var candidates=[],subtitles=[],parent=epUrl,frames=aoFrames(html,epUrl);
   for(var i=0;i<frames.length;i++){
-    var frameHtml=await aoRead(frames[i],AO_ORIGIN+'/');
+    var frameHtml=await aoRead(frames[i],AO_ORIGIN+'/',true);
     if(!frameHtml)continue;
     var close=aoCloseLoad(frameHtml);
     if(close){candidates=[close.url];subtitles=close.subtitles;parent=frames[i];break}
@@ -160,12 +187,28 @@ async function aoExtract(epUrl){
   var label=/\bDUAL\b|T[üu]rk[çc]e\s*Dublaj/i.test(html)
     ?'Dual/TR (site etiketi)':'Ses dili doğrulanmadı';
   var referer=((parent.match(/^https?:\/\/[^/]+/)||[])[0]||AO_ORIGIN)+'/';
-  return candidates.map(function(url){
-    var hls=/\.m3u8(?:[?#]|$)|\/master\.txt(?:[?#]|$)/i.test(url),playUrl=hls&&url.indexOf('#')<0?url+'#.m3u8':url;
-    return {name:'HDFilmCehennemi Diziler [AO]',title:(hls?'1080p HLS':'MP4')+' | '+label,
-      url:playUrl,quality:hls?'1080p':'Auto',format:hls?'hls':'mp4',isHls:hls,
-      headers:{Referer:referer},behaviorHints:{headers:{Referer:referer}},subtitles:subtitles};
-  });
+  var requestHeaders={
+    Referer:referer,
+    'User-Agent':AO_HEADERS['User-Agent'],
+    Origin:referer.replace(/\/$/,'')
+  };
+  // Only return links whose source server currently responds as playable media.
+  // A 404 here is a stream error, not a GitHub/manifest install error.
+  var streams=[];
+  for(var j=0;j<candidates.length&&j<5;j++){
+    var url=candidates[j];
+    var hls=/\.m3u8(?:[?#]|$)|\/master\.txt(?:[?#]|$)/i.test(url);
+    if(!(await aoProbePlayable(url,requestHeaders,hls)))continue;
+    streams.push({
+      name:'HDFilmCehennemi Diziler [AO]',
+      title:(hls?'HLS':'MP4')+' | '+label,
+      url:url,quality:'Auto',format:hls?'hls':'mp4',isHls:hls,
+      headers:requestHeaders,
+      behaviorHints:{headers:requestHeaders,proxyHeaders:{request:requestHeaders}},
+      subtitles:subtitles
+    });
+  }
+  return streams;
 }
 function aoArgs(id,mediaType,season,episode){
   if(id&&typeof id==='object'){
