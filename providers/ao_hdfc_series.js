@@ -69,27 +69,38 @@ function aoEpisode(url,slug){
   var m=String(url||'').split(/[?#]/)[0].match(new RegExp('/dizi/'+quoted+'/sezon-(\\d+)/bolum-(\\d+)(?:-hd\\d+)?/?$','i'));
   return m?{season:Number(m[1]),episode:Number(m[2]),url:url}:null;
 }
-async function aoFindEpisode(slug,season,episode){
-  if(!/^[a-z0-9-]{2,120}$/.test(slug))return '';
-  var home=AO_ORIGIN+'/dizi/'+slug+'/';
-  var pages=[home+'sezon-'+season+'/',home];
-  // Exact, user-supplied episode routes. Suffixes such as -hd9 must not be guessed.
-  var known={
-    'the-flash-izle-12:4:1':home+'sezon-4/bolum-1-hd12/',
-    'the-flash-izle-12:4:16':home+'sezon-4/bolum-16-hd9/'
-  };
-  var knownUrl=known[slug+':'+season+':'+episode]||'';
-  if(knownUrl)pages.unshift(knownUrl);
-  for(var i=0;i<pages.length;i++){
-    var html=await aoRead(pages[i]);if(!html)continue;
-    if(knownUrl&&pages[i]===knownUrl)return pages[i];
-    var links=aoLinks(html,pages[i]);
-    for(var k=0;k<links.length;k++){
-      var item=aoEpisode(links[k],slug);
-      if(item&&item.season===season&&item.episode===episode)return item.url;
+function aoEpisodeBase(slug,season,episode){
+  return AO_ORIGIN+'/dizi/'+slug+'/sezon-'+season+'/bolum-'+episode+'/';
+}
+function aoDistinctUrls(urls){
+  var arr=[],seen={};
+  for(var i=0;i<urls.length;i++){
+    var u=urls[i];
+    if(u&&!seen[u]){seen[u]=true;arr.push(u);}
+  }
+  return arr;
+}
+async function aoFindEpisodeUrls(slug,season,episode){
+  if(!/^[a-z0-9-]{2,120}$/.test(slug))return [];
+  var home=AO_ORIGIN+'/dizi/'+slug+'/',urls=[];
+  // Scan site links instead of guessing per-episode hd suffixes.
+  var listing=[home+'sezon-'+season+'/',home];
+  for(var i=0;i<listing.length;i++){
+    var html=await aoRead(listing[i],undefined,true);
+    var links=aoLinks(html,listing[i]);
+    for(var j=0;j<links.length;j++){
+      var ep=aoEpisode(links[j],slug);
+      if(ep&&ep.season===season&&ep.episode===episode)urls.push(ep.url);
     }
   }
-  return '';
+  // Known URLs are only fallbacks supplied by the user.
+  if(slug===AO_FLASH&&season===4&&episode===16){
+    urls.push(home+'sezon-4/bolum-16-hd9/');
+  }
+  if(slug===AO_FLASH&&season===4&&episode===1){
+    urls.push(home+'sezon-4/bolum-1-hd12/');
+  }
+  return aoDistinctUrls(urls);
 }
 function aoDirect(html,page){
   var input=aoDecode(html||''),out=[],seen={},m;
@@ -152,30 +163,26 @@ function aoFrames(html,parent){
   return out.slice(0,3);
 }
 async function aoProbePlayable(url,headers,hls){
-  var opts={headers:{},signal:undefined};
+  // Only reject DEFINITE missing/invalid sources. Cross-origin fetch, Range
+  // requests and anti-bot checks can fail even if the video player can play.
+  var opts={headers:{}};
   for(var k in headers)if(Object.prototype.hasOwnProperty.call(headers,k))opts.headers[k]=headers[k];
   if(typeof AbortSignal!=='undefined'&&AbortSignal.timeout)opts.signal=AbortSignal.timeout(5000);
   try{
     if(hls){
-      // Read just the start of the playlist, not a video file.
-      opts.headers.Range='bytes=0-16383';
-      var r=await fetch(url,opts);
-      if(!r.ok)return false;
-      var data=await r.text();
-      // CDN error pages often respond with 200 HTML; reject those as non-media.
-      return /^\s*#EXTM3U\b/i.test(data)&&/#EXT-X-|#EXTINF/i.test(data);
+      var result=await fetch(url,opts);
+      if(result.status===404||result.status===410)return false;
+      if(!result.ok)return true;
+      var body=await result.text();
+      if(/^\s*<!doctype html|^\s*<html\b/i.test(body))return false;
+      return true;
     }
     opts.method='HEAD';
     var head=await fetch(url,opts);
-    if(head.ok)return true;
-    if(head.status!==405&&head.status!==501)return false;
-    // Some hosts do not support HEAD; use a tiny ranged GET instead.
-    opts.method='GET';
-    opts.headers.Range='bytes=0-127';
-    var get=await fetch(url,opts);
-    if(get.body&&typeof get.body.cancel==='function')try{await get.body.cancel()}catch(e){}
-    return get.ok;
-  }catch(e){return false}
+    return head.status!==404&&head.status!==410;
+  }catch(e){
+    return true;
+  }
 }
 async function aoExtract(epUrl){
   var html=await aoRead(epUrl,undefined,true);if(!html)return [];
@@ -243,16 +250,20 @@ async function getStreams(id,mediaType,season,episode){
   if(a.type==='movie'||!a.slug||
     !Number.isInteger(a.season)||!Number.isInteger(a.episode)||
     a.season<1||a.season>50||a.episode<1||a.episode>100)return [];
-  var link=await aoFindEpisode(a.slug,a.season,a.episode);
-  if(!link){
-    if(typeof console!=='undefined'&&console.warn)console.warn('[AO HDFC] No episode URL',a.slug,a.season,a.episode);
-    return [];
+  // Try canonical suffix-free path before probing index pages.
+  var direct=aoEpisodeBase(a.slug,a.season,a.episode);
+  var streams=await aoExtract(direct);
+  if(streams.length)return streams;
+  var urls=await aoFindEpisodeUrls(a.slug,a.season,a.episode);
+  for(var i=0;i<urls.length;i++){
+    if(urls[i]===direct)continue;
+    streams=await aoExtract(urls[i]);
+    if(streams.length)return streams;
   }
-  var streams=await aoExtract(link);
-  if(!streams.length&&typeof console!=='undefined'&&console.warn){
-    console.warn('[AO HDFC] Episode page found, no playable source',a.slug,a.season,a.episode);
+  if(typeof console!=='undefined'&&console.warn){
+    console.warn('[AO HDFC] No playable source for',a.slug,'S'+a.season+'E'+a.episode,'after',urls.length+1,'routes');
   }
-  return streams;
+  return [];
 }
 function aoMetaBase(slug){
   return {id:AO_ID+':show:'+slug,type:'series',
