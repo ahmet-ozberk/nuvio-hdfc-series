@@ -30,3 +30,12 @@ IMPORTANT: The target website could not be reached reliably from the test enviro
 - Use the public `/yabancidiziizle-5/` series listing and homepage for catalog discovery.
 - Log whether a missing result is due to episode URL discovery or stream extraction.
 - Mock tests passed. Live site access/playback and Turkish audio still **not verified**.
+
+## v0.2.4
+
+- Try a season/episode's suffix-free URL before any slug guessing, e.g. `/dizi/the-flash-izle-12/sezon-4/bolum-16/`.
+- If no stream is extracted, discover actual `-hdN` URLs from season/show HTML anchors and try those.
+- A strict stream probe used to hide all candidate links on HTTP 403/network errors; 404/410 still hide definite missing sources, but an inconclusive response now retains the discovered candidate.
+- Nuvio **Plugins/Local Scrapers** are primarily stream providers. A plugin manifest does not guarantee a separate searchable TV catalog or Home rows; open The Flash using an existing TMDB/addon catalog and check its source list.
+- Only The Flash (TMDB 60735 or IMDb tt3107288) currently has reliable automatic ID mapping. Other show metadata IDs are not yet mapped.
+- **Not yet validated**: the actual HDFilmCehennemi video player, working 4x16 stream, and Turkish dub audio track. The site denies testing environment HTML requests with HTTP 403.
